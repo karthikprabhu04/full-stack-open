@@ -6,6 +6,12 @@ const Results = ({ countryList, setNewSearch }) => {
   if (countryList.length > 10) {
     return <div>Too many matches, specify another filter</div>;
   } else if (countryList.length === 1) {
+    // Using apiKey to get weather data of country - temperature, icon, wind
+    const lat = countryList[0].latlng[0]
+    const lon = countryList[0].latlng[1]
+    // console.log(lat, lon)
+    server.getWeather(lat, lon)
+
     return (
       <div>
         <h1>{countryList[0].name.common}</h1>
@@ -46,6 +52,7 @@ const Results = ({ countryList, setNewSearch }) => {
 function App() {
   const [newSearch, setNewSearch] = useState("");
   const [countryList, setCountryList] = useState([]);
+  
 
   const handleSearchChange = (e) => {
     setNewSearch(e.target.value);

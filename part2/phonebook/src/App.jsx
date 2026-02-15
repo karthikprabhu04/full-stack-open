@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 // import axios from "axios";
 import server from "./server";
+import Notification from "./notification";
+import ErrorBlock from "./error";
+import "./styles.css";
 
 // Filter search
 const Filter = ({ newSearch, handleSearchChange }) => {
@@ -38,7 +41,7 @@ const PersonForm = ({
 };
 
 // List of people taking into account the search phrase
-const Persons = ({ persons, newSearch, setPersons }) => {
+const Persons = ({ persons, newSearch, setPersons, setErrorMessage }) => {
   return (
     <div>
       {persons
@@ -47,7 +50,7 @@ const Persons = ({ persons, newSearch, setPersons }) => {
         )
         .map((person) => (
           <div>
-            <p key={person.name}>
+            <p key={person.id}>
               {person.name} {person.number}
               {/* Delete button and update list */}
               <button
@@ -56,7 +59,11 @@ const Persons = ({ persons, newSearch, setPersons }) => {
                     server
                       .deleteEntry(person.id)
                       .then(() => server.getAll())
-                      .then((list) => setPersons(list));
+                      .then((list) => setPersons(list))
+                      .catch((error) => {
+                        setErrorMessage(error.response?.data?.error || "Failed to delete entry");
+                        setTimeout(() => setErrorMessage(null), 3000);
+                      });
                   }
                 }}
               >
@@ -76,9 +83,12 @@ const App = () => {
     server.getAll().then((list) => setPersons(list));
   }, []);
 
+  // All states
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [newSearch, setNewSearch] = useState("");
+  const [message, setMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   // Adding name to server
   const addName = (e) => {
@@ -108,6 +118,9 @@ const App = () => {
         })
         .then((list) => setPersons(list));
 
+      // Notification successful
+      setMessage("Added person");
+      setTimeout(() => setMessage(null), 3000);
       // Clear form data
       setNewName("");
       setNewNumber("");
@@ -131,6 +144,9 @@ const App = () => {
     <div>
       <h2>Phonebook</h2>
 
+      <Notification message={message} />
+      <ErrorBlock errorMessage={errorMessage} />
+
       <Filter newSearch={newSearch} handleSearchChange={handleSearchChange} />
 
       <h2>add a new</h2>
@@ -149,6 +165,7 @@ const App = () => {
         persons={persons}
         newSearch={newSearch}
         setPersons={setPersons}
+        setErrorMessage={setErrorMessage}
       />
     </div>
   );
