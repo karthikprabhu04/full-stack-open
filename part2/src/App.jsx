@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+// import axios from "axios";
+import server from "./server";
 
+// Filter search
 const Filter = ({ newSearch, handleSearchChange }) => {
   return (
     <p>
@@ -10,6 +12,7 @@ const Filter = ({ newSearch, handleSearchChange }) => {
   );
 };
 
+// Fill in form to add people
 const PersonForm = ({
   addName,
   newName,
@@ -34,7 +37,8 @@ const PersonForm = ({
   );
 };
 
-const Persons = ({ persons, newSearch }) => {
+// List of people taking into account the search phrase
+const Persons = ({ persons, newSearch, setPersons }) => {
   return (
     <div>
       {persons
@@ -42,28 +46,41 @@ const Persons = ({ persons, newSearch }) => {
           person.name.toLowerCase().includes(newSearch.toLowerCase()),
         )
         .map((person) => (
-          <p key={person.name}>
-            {person.name} {person.number}
-          </p>
+          <div>
+            <p key={person.name}>
+              {person.name} {person.number}
+              {/* Delete button and update list */}
+              <button
+                onClick={() => {
+                  if (window.confirm("Confirm deletion?")) {
+                    server
+                      .deleteEntry(person.id)
+                      .then(() => server.getAll())
+                      .then((list) => setPersons(list));
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </p>
+          </div>
         ))}
     </div>
   );
 };
 
+// Main App to display items
 const App = () => {
   const [persons, setPersons] = useState([]);
   useEffect(() => {
-     axios
-      .get("http://localhost:3001/persons")
-      .then(response => {
-        console.log(response.data)
-        setPersons(response.data)})
-  }, [])
+    server.getAll().then((list) => setPersons(list));
+  }, []);
 
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [newSearch, setNewSearch] = useState("");
 
+  // Adding name to server
   const addName = (e) => {
     e.preventDefault();
 
@@ -73,14 +90,31 @@ const App = () => {
     };
     const exists = persons.some((person) => person.name === newName);
     if (exists) {
-      alert(`${newName} already exists`);
+      // Change number if name already in the list
+      window.confirm(
+        `${newName} is already added to phonebook, replace the old number with a new one?`,
+      );
+      const id = persons.find((person) => person.name === newName).id;
+      server
+        .update(id, personObject)
+        .then(() => server.getAll())
+        .then((list) => setPersons(list));
     } else {
-      setPersons(persons.concat(personObject));
+      // Add to database and update list
+      server
+        .create(personObject)
+        .then(() => {
+          return server.getAll();
+        })
+        .then((list) => setPersons(list));
+
+      // Clear form data
       setNewName("");
       setNewNumber("");
     }
   };
 
+  // Form entry changes
   const handleNameChange = (e) => {
     setNewName(e.target.value);
   };
@@ -111,7 +145,11 @@ const App = () => {
 
       <h2>Numbers</h2>
 
-      <Persons persons={persons} newSearch={newSearch} />
+      <Persons
+        persons={persons}
+        newSearch={newSearch}
+        setPersons={setPersons}
+      />
     </div>
   );
 };
