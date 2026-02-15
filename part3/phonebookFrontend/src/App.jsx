@@ -61,7 +61,10 @@ const Persons = ({ persons, newSearch, setPersons, setErrorMessage }) => {
                       .then(() => server.getAll())
                       .then((list) => setPersons(list))
                       .catch((error) => {
-                        setErrorMessage(error.response?.data?.error || "Failed to delete entry");
+                        setErrorMessage(
+                          error.response?.data?.error ||
+                            "Failed to delete entry",
+                        );
                         setTimeout(() => setErrorMessage(null), 3000);
                       });
                   }
