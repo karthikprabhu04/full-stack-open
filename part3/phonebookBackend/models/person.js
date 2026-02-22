@@ -22,8 +22,21 @@ mongoose
 
 // Schema
 const personSchema = new mongoose.Schema({
-  name: String,
-  phoneNumber: Number,
+  name: {
+    type: String,
+    minLength: 3,
+    required: true
+  },
+  phoneNumber: {
+    type: String,
+    minLength: 8,
+    validate: {
+      validator: function(v) {
+        return /^\d{2,3}-\d+$/.test(v);
+      },
+      message: props => `${props.value} is not a valid phone number!`
+    }
+  },
 });
 
 personSchema.set("toJSON", {
@@ -37,26 +50,5 @@ personSchema.set("toJSON", {
 // Model
 const Person = mongoose.model("Person", personSchema);
 
-// Document
-// if (process.argv.length === 2) {
-//   console.log("phonebook:");
-//   Person.find({}).then((result) => {
-//     result.forEach((person) => {
-//       console.log(`${person.name} ${person.phoneNumber}`);
-//     });
-//   });
-// } else if (process.argv.length === 5) {
-//   const name = process.argv[3];
-//   const phoneNumber = process.argv[4];
-
-//   const person = new Person({
-//     name,
-//     phoneNumber,
-//   });
-
-//   person.save().then((result) => {
-//     console.log(`Added ${name} number ${phoneNumber} to phonebook`);
-//   });
-// }
 
 module.exports = mongoose.model('Person', personSchema)

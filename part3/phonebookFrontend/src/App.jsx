@@ -117,7 +117,7 @@ const App = () => {
       })
       .catch((error) => {
         console.log(error);
-        setMessage("Error adding person");
+        setMessage(error.response.data.error);
         setTimeout(() => setMessage(null), 3000);
       });
   };
