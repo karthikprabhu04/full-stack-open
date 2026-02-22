@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-// import axios from "axios";
 import server from "./server";
 import Notification from "./notification";
 import ErrorBlock from "./error";
@@ -51,7 +50,7 @@ const Persons = ({ persons, newSearch, setPersons, setErrorMessage }) => {
         .map((person) => (
           <div>
             <p key={person.id}>
-              {person.name} {person.number}
+              {person.name} {person.phoneNumber}
               {/* Delete button and update list */}
               <button
                 onClick={() => {
@@ -99,35 +98,28 @@ const App = () => {
 
     const personObject = {
       name: newName,
-      number: newNumber,
+      phoneNumber: newNumber,
     };
-    const exists = persons.some((person) => person.name === newName);
-    if (exists) {
-      // Change number if name already in the list
-      window.confirm(
-        `${newName} is already added to phonebook, replace the old number with a new one?`,
-      );
-      const id = persons.find((person) => person.name === newName).id;
-      server
-        .update(id, personObject)
-        .then(() => server.getAll())
-        .then((list) => setPersons(list));
-    } else {
-      // Add to database and update list
-      server
-        .create(personObject)
-        .then(() => {
-          return server.getAll();
-        })
-        .then((list) => setPersons(list));
 
-      // Notification successful
-      setMessage("Added person");
-      setTimeout(() => setMessage(null), 3000);
-      // Clear form data
-      setNewName("");
-      setNewNumber("");
-    }
+    console.log(personObject);
+
+    server
+      .create(personObject)
+      .then(() => server.getAll())
+      .then((list) => {
+        setPersons(list);
+        // Notification successful
+        setMessage("Added person");
+        setTimeout(() => setMessage(null), 3000);
+        // Clear form data
+        setNewName("");
+        setNewNumber("");
+      })
+      .catch((error) => {
+        console.log(error);
+        setMessage("Error adding person");
+        setTimeout(() => setMessage(null), 3000);
+      });
   };
 
   // Form entry changes

@@ -21,13 +21,16 @@ app.get("/api/persons", (req, res) => {
 });
 
 // Get info list
-// app.get("/info", (req, res) => {
-//   notesNumber = notes.length;
-//   res.send(`Phonebook has info for ${notesNumber} people<br> ` + new Date());
-// });
+app.get("/info", (req, res, next) => {
+  Person.countDocuments([])
+  .then(count => {
+    res.send(`Phonebook has info for ${count} people<br> ` + new Date());
+  })
+  .catch(error => next(error))
+});
 
 // Get single person
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", (req, res, next) => {
   Person.findById(req.params.id)
     .then((person) => {
       res.json(person);
@@ -45,27 +48,43 @@ app.delete("/api/persons/:id", (req, res, next) => {
 });
 
 // Add new person
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   if (!req.body.name || !req.body.phoneNumber) {
     return res.status(400).send({
       error: `Must submit both a name and number ${req.body.name} ${req.body.phoneNumber}`,
     });
   }
 
-  const newPerson = new Person({
-    name: req.body.name,
-    phoneNumber: req.body.phoneNumber,
-  });
+  Person.findOne({ name: req.body.name }).then(
+    (existingPerson) => {
+      if (existingPerson) {
+        existingPerson.phoneNumber = req.body.phoneNumber;
 
-  newPerson
-    .save()
-    .then((savedPerson) => {
-      res.json(savedPerson);
-      console.log(
-        `Added ${req.body.name} number ${req.body.phoneNumber} to phonebook`,
-      );
-    })
-    .catch((error) => next(error));
+        return existingPerson
+          .save()
+          .then((updatedPerson) => {
+            console.log(`Updated ${req.body.name}'s number`);
+            res.json(updatedPerson);
+          })
+          .catch((error) => next(error));
+      }
+
+      const newPerson = new Person({
+        name: req.body.name,
+        phoneNumber: req.body.phoneNumber,
+      });
+    
+      return newPerson
+        .save()
+        .then((savedPerson) => {
+          res.json(savedPerson);
+          console.log(
+            `Added ${req.body.name} number ${req.body.phoneNumber} to phonebook`,
+          );
+        })
+        .catch((error) => next(error));
+    },
+  );
 });
 
 // Unknown endpoint
