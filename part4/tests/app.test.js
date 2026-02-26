@@ -28,6 +28,7 @@ beforeEach(async () => {
   await blogObject.save()
 })
 
+
 test('notes are returned as json', async () => {
   const response = await api
     .get('/api/blogs')
@@ -90,7 +91,7 @@ test('Likes should default to 0 if missing', async () => {
 })
 
 // Test for when title and url properties missing
-test.only('returns 400 if title is missing', async () => {
+test('returns 400 if title is missing', async () => {
   const newBlog = {
     url: 'example.com',
     author: 'Jack Smith'
@@ -102,7 +103,7 @@ test.only('returns 400 if title is missing', async () => {
     .expect(400)
 })
 
-test.only('returns 400 if url is missing', async () => {
+test('returns 400 if url is missing', async () => {
   const newBlog = {
     title: 'Testing validation',
     author: 'Jack Smith'
@@ -113,6 +114,52 @@ test.only('returns 400 if url is missing', async () => {
     .send(newBlog)
     .expect(400)
 })
+
+// Test for deleting post
+test('Deletion of one post successfully', async () => {
+  // Get id of a post
+  const response = await api.get('/api/blogs')
+  const latestBlog = response.body[response.body.length - 1]
+  const latestBlogID = latestBlog.id
+  // Remove id of a post
+  await api
+    .delete(`/api/blogs/${latestBlogID}`)
+    .expect(204)
+  // Check length of posts is one less
+  const final = await api.get('/api/blogs')
+  assert.strictEqual(final.body.length, initalBlogs.length - 1)
+})
+
+test.only('Update of one post', async () => {
+  // Get existing blogs
+  const blogsAtStart = await api.get('/api/blogs')
+  const blogToUpdate = blogsAtStart.body[0]
+
+  // Update data
+  const updatedData = {
+    ...blogToUpdate,
+    likes: blogToUpdate.likes + 1
+  }
+
+  // Send PUT request
+  const response = await api
+    .put(`/api/blogs/${blogToUpdate.id}`)
+    .send(updatedData)
+    .expect(200)
+    .expect('Content-Type', /application\/json/)
+
+  // Verify likes updated
+  assert.strictEqual(response.body.likes, updatedData.likes)
+
+  // Verify DB actually updated
+  const blogsAtEnd = await api.get('/api/blogs')
+  const updatedBlog = blogsAtEnd.body.find(
+    b => b.id === blogToUpdate.id
+  )
+
+  assert.strictEqual(updatedBlog.likes, updatedData.likes)
+})
+
 
 // Cleanup after the tests to cut off database connection
 after(async () => {
