@@ -31,7 +31,7 @@ beforeEach(async () => {
   await blogObject.save()
 })
 
-describe('Basic tests for app', () => {
+describe.only('Basic tests for app', () => {
   test('notes are returned as json', async () => {
     const response = await api
       .get('/api/blogs')

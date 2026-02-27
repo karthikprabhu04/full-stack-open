@@ -3,14 +3,9 @@ const Blog = require('../models/blog')
 const User = require('../models/user')
 const jwt = require('jsonwebtoken')
 const config = require('../utils/config')
+const e = require('express')
 
-const getTokenFrom = request => {
-  const authorization = request.get('authorization')
-  if (authorization && authorization.startsWith('Bearer ')) {
-    return authorization.replace('Bearer ', '')
-  }
-  return null
-}
+
 
 // Reading data
 blogsRouter.get('/', async (request, response) => {
@@ -26,12 +21,7 @@ blogsRouter.get('/', async (request, response) => {
 blogsRouter.post('/', async (request, response, next) => {
   try {
     const body = request.body
-    // Verify token
-    const decodedToken = jwt.verify(getTokenFrom(request), config.SECRET)
-    if (!decodedToken.id) {
-      return response.status(401).json({ error: 'token invalid' })
-    }
-    const user = await User.findById(decodedToken.id)
+    const user = request.user
 
     if (!user) {
       return response.status(400).json({ error: "userId missing or not valid"})
@@ -55,15 +45,34 @@ blogsRouter.post('/', async (request, response, next) => {
   }
 })
 
+// Deleting blogs
 blogsRouter.delete('/:id', async (request, response, next) => {
   try {
-    await Blog.findByIdAndDelete(request.params.id)
-    response.status(204).end()
+    const blog = await Blog.findById(request.params.id)
+    const user = request.user
+
+    if (!user) {
+      return response.status(400).json({ error: "userId missing or not valid"})
+    }
+    
+    if (!blog) {
+      return response.status(404).end()
+    }
+
+    if (blog.user.toString() === user._id.toString()) {
+      // Delete post
+      await Blog.findByIdAndDelete(request.params.id)
+      response.status(204).end()
+    } else {
+      return response.status(403).json({ error: "user logged in did not create this post"})
+    }
+
   } catch (error) {
     next(error)
   }
 })
 
+// Updating blogs
 blogsRouter.put('/:id', async (request, response, next) => {
   const { title, author, url, likes } = request.body
 
