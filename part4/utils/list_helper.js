@@ -1,4 +1,5 @@
 const blog = require("../models/blog")
+const User = require('../models/user')
 const _ = require('lodash')
 
 const dummy = (blogs) => {
@@ -54,11 +55,17 @@ const topLikesLodash = (blogs) => {
   return result
 }
 
+const usersInDb = async () => {
+  const users = await User.find({})
+  return users.map(u => u.toJSON())
+}
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
   topBlogger,
   topBloggerLodash,
-  topLikesLodash
+  topLikesLodash,
+  usersInDb,
 }

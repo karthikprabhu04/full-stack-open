@@ -5,6 +5,7 @@ const supertest = require('supertest')
 const Blog = require('../models/blog')
 const app = require('../app')
 
+
 const api = supertest(app)
 
 // Create artifical database documents
@@ -167,6 +168,7 @@ describe('Updating and deleting posts', () => {
     assert.strictEqual(updatedBlog.likes, updatedData.likes)
   })
 })
+
 
 // Cleanup after the tests to cut off database connection
 after(async () => {
