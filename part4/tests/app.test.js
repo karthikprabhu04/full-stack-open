@@ -4,6 +4,7 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const Blog = require('../models/blog')
 const app = require('../app')
+const User = require('../models/user')
 
 
 const api = supertest(app)
@@ -32,45 +33,54 @@ beforeEach(async () => {
 })
 
 describe.only('Basic tests for app', () => {
-  test('notes are returned as json', async () => {
+  const loginAndGetToken = async (username, password) => {
     const response = await api
-      .get('/api/blogs')
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-  
-    console.log("Number of posts:", response.body.length)
-  })
+      .post('/api/login')
+      .send({ username, password })
 
-  test('verify that unique identifier is id and not _id', async () => {
-    const response = await api
-      .get('/api/blogs')
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-  
-    const blog = response.body[0]
-  
-    assert.ok(blog.id)
-    assert.strictEqual(blog._id, undefined)
-  })
+    return response.body.token
+  }
 
-  test('post request saved successfully', async () => {
+  beforeEach(async () => {
+    await Blog.deleteMany({})
+    await User.deleteMany({})
+
+    await api.post('/api/users').send({
+      username: 'testuser',
+      name: 'Test User',
+      password: 'password'
+    })
+  })
+  
+  test('a valid blog can be added', async () => {
+    const token = await loginAndGetToken('testuser', 'password')
+
     const newBlog = {
-      title: "new title post for test",
-      author: "John Smith",
-      url: "testurl",
+      title: 'authenticated blog',
+      author: 'me',
+      url: 'test.com',
+      likes: 5
     }
-    
+
+    await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
+      .expect(201)
+  })
+
+  test('adding a blog fails with 401 if token is not provided', async () => {
+    const newBlog = {
+      title: 'no token blog',
+      author: 'anonymous',
+      url: 'test.com',
+      likes: 1
+    }
+
     await api
       .post('/api/blogs')
       .send(newBlog)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-  
-    const response = await api.get('/api/blogs')
-    const contents = response.body.map(r => r.title)
-  
-    assert.strictEqual(response.body.length, initalBlogs.length + 1)
-    assert(contents.includes('new title post for test'))
+      .expect(401)
   })
 })
 

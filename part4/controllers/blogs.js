@@ -1,10 +1,6 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/user')
-const jwt = require('jsonwebtoken')
-const config = require('../utils/config')
-const e = require('express')
-
+const { userExtractor } = require('../utils/middleware')
 
 
 // Reading data
@@ -18,11 +14,11 @@ blogsRouter.get('/', async (request, response) => {
 })
 
 // Writing data
-blogsRouter.post('/', async (request, response, next) => {
+blogsRouter.post('/', userExtractor, async (request, response, next) => {
   try {
     const body = request.body
     const user = request.user
-
+    
     if (!user) {
       return response.status(400).json({ error: "userId missing or not valid"})
     }
@@ -46,7 +42,7 @@ blogsRouter.post('/', async (request, response, next) => {
 })
 
 // Deleting blogs
-blogsRouter.delete('/:id', async (request, response, next) => {
+blogsRouter.delete('/:id', userExtractor, async (request, response, next) => {
   try {
     const blog = await Blog.findById(request.params.id)
     const user = request.user
@@ -73,7 +69,7 @@ blogsRouter.delete('/:id', async (request, response, next) => {
 })
 
 // Updating blogs
-blogsRouter.put('/:id', async (request, response, next) => {
+blogsRouter.put('/:id', userExtractor, async (request, response, next) => {
   const { title, author, url, likes } = request.body
 
   const blog = {
